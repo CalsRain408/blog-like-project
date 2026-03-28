@@ -29,4 +29,7 @@ public class RedisConstants {
     public static final Long CACHE_VOUCHER_SHOP_TTL = 10L;      // Redis TTL：10分钟
     // Redis Pub/Sub 频道：用于通知各实例失效本地Caffeine缓存
     public static final String CACHE_VOUCHER_INVALIDATION_CHANNEL = "cache:voucher:invalidation";
+
+    // 滑动窗口限流
+    public static final String SLIDE_WINDOW_KEY = "slide:window:";
 }
