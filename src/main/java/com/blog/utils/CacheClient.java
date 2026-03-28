@@ -4,11 +4,13 @@ import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -144,6 +146,109 @@ public class CacheClient {
         // 3、返回过期数据
         return t;
 
+    }
+
+    // -------------------------------------------------------------------------
+    // 二级缓存：L1(Caffeine) → L2(Redis) → DB
+    // -------------------------------------------------------------------------
+
+    /**
+     * 二级缓存查询单个对象（缓存空值防穿透）
+     *
+     * <pre>
+     * 读取顺序：
+     *   1. L1 Caffeine：命中 → 直接返回（纳秒级）
+     *   2. L2 Redis   ：命中 → 回填 L1 → 返回（毫秒级）
+     *   3. DB         ：命中 → 回填 L2 & L1 → 返回；未命中 → 缓存空值防穿透
+     * </pre>
+     *
+     * @param localCache Caffeine 本地缓存实例
+     * @param keyPrefix  Redis key 前缀
+     * @param id         数据 ID
+     * @param type       返回对象类型
+     * @param dbFallback DB 查询函数
+     * @param redisTtl   Redis 缓存有效期
+     * @param unit       有效期时间单位
+     */
+    public <T, ID> T queryWithTwoLevelCache(
+            Cache<String, String> localCache,
+            String keyPrefix, ID id, Class<T> type,
+            Function<ID, T> dbFallback, Long redisTtl, TimeUnit unit) {
+
+        String key = keyPrefix + id;
+
+        // 1. 查 L1 Caffeine
+        String json = localCache.getIfPresent(key);
+        if (json != null) {
+            return json.isEmpty() ? null : JSONUtil.toBean(json, type);
+        }
+
+        // 2. 查 L2 Redis
+        String redisJson = stringRedisTemplate.opsForValue().get(key);
+        if (redisJson != null) {
+            // 回填 L1
+            localCache.put(key, redisJson);
+            return redisJson.isEmpty() ? null : JSONUtil.toBean(redisJson, type);
+        }
+
+        // 3. 查 DB
+        T t = dbFallback.apply(id);
+        if (t == null) {
+            // 缓存空值（短 TTL），防止缓存穿透
+            localCache.put(key, "");
+            stringRedisTemplate.opsForValue().set(key, "", RedisConstants.CACHE_NULL_TTL, TimeUnit.SECONDS);
+            return null;
+        }
+
+        String newJson = JSONUtil.toJsonStr(t);
+        stringRedisTemplate.opsForValue().set(key, newJson, redisTtl, unit);
+        localCache.put(key, newJson);
+        return t;
+    }
+
+    /**
+     * 二级缓存查询列表（缓存空列表防穿透）
+     *
+     * @param localCache Caffeine 本地缓存实例
+     * @param keyPrefix  Redis key 前缀
+     * @param id         数据 ID
+     * @param elementType List 中元素的类型
+     * @param dbFallback  DB 查询函数
+     * @param redisTtl    Redis 缓存有效期
+     * @param unit        有效期时间单位
+     */
+    public <T, ID> List<T> queryListWithTwoLevelCache(
+            Cache<String, String> localCache,
+            String keyPrefix, ID id, Class<T> elementType,
+            Function<ID, List<T>> dbFallback, Long redisTtl, TimeUnit unit) {
+
+        String key = keyPrefix + id;
+
+        // 1. 查 L1 Caffeine
+        String json = localCache.getIfPresent(key);
+        if (json != null) {
+            return json.isEmpty() ? List.of() : JSONUtil.toList(json, elementType);
+        }
+
+        // 2. 查 L2 Redis
+        String redisJson = stringRedisTemplate.opsForValue().get(key);
+        if (redisJson != null) {
+            localCache.put(key, redisJson);
+            return redisJson.isEmpty() ? List.of() : JSONUtil.toList(redisJson, elementType);
+        }
+
+        // 3. 查 DB
+        List<T> list = dbFallback.apply(id);
+        if (list == null || list.isEmpty()) {
+            localCache.put(key, "");
+            stringRedisTemplate.opsForValue().set(key, "", RedisConstants.CACHE_NULL_TTL, TimeUnit.SECONDS);
+            return List.of();
+        }
+
+        String newJson = JSONUtil.toJsonStr(list);
+        stringRedisTemplate.opsForValue().set(key, newJson, redisTtl, unit);
+        localCache.put(key, newJson);
+        return list;
     }
 
     /**

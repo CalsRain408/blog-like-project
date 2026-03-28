@@ -55,4 +55,14 @@ public class VoucherController {
     public Result queryVoucherOfShop(@PathVariable("shopId") Long shopId) {
        return voucherService.queryVoucherOfShop(shopId);
     }
+
+    /**
+     * 查询优惠券详情（走二级缓存）
+     * @param voucherId 优惠券id
+     * @return 优惠券详情
+     */
+    @GetMapping("/{voucherId}")
+    public Result queryVoucherById(@PathVariable("voucherId") Long voucherId) {
+        return voucherService.queryVoucherById(voucherId);
+    }
 }
