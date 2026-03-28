@@ -31,5 +31,5 @@ public class RedisConstants {
     public static final String CACHE_VOUCHER_INVALIDATION_CHANNEL = "cache:voucher:invalidation";
 
     // 滑动窗口限流
-    public static final String SLIDE_WINDOW_KEY = "slide:window:";
+    public static final String SLIDE_WINDOW_KEY = "slide:window";
 }
