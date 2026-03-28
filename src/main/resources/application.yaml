@@ -22,8 +22,30 @@ spring:
           max-idle: 10
           min-idle: 1
           time-between-eviction-runs: 10s
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      # 生产者可靠性保证
+      acks: all
+      retries: 3
+    consumer:
+      group-id: seckill-order-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      # 从最早的未消费消息开始，防止消息丢失
+      auto-offset-reset: earliest
+      # 关闭自动提交，改为消费成功后手动提交，保证至少消费一次
+      enable-auto-commit: false
+      properties:
+        # 信任反序列化的包，防止 ClassNotFound
+        spring.json.trusted.package: "com.blog.entity"
+
 mybatis-plus:
   type-aliases-package: com.blog.entity # 别名扫描包
+
 logging:
   level:
     com.blog: debug
