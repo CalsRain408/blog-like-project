@@ -75,6 +75,7 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
         return Result.ok(voucher);
     }
 
+
     /**
      * 新增秒杀优惠券：写 DB → 写 Redis 秒杀库存 key
      * 缓存一致性完全依赖 Caffeine/Redis 的 TTL 自动过期，无需主动失效。

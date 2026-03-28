@@ -23,6 +23,15 @@ public class KafkaConfig {
                 .build();
     }
 
+    /** 库存释放重试 Topic：1 个分区，1 副本 */
+    @Bean
+    public NewTopic stockReleaseTopic() {
+        return TopicBuilder.name("stock-release")
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
+
     /**
      * 消费者错误处理：最多重试 3 次，每次间隔 1 秒。
      * 重试耗尽后消息进入死信队列（需配置 DLT），避免阻塞正常消费。
