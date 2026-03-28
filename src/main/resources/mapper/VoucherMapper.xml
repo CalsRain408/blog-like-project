@@ -19,4 +19,13 @@
         LEFT JOIN tb_seckill_voucher sv ON v.id = sv.voucher_id
         WHERE v.id = #{voucherId} AND v.status = 1
     </select>
+
+    <select id="findVoucherByShopName" resultType="com.blog.entity.Voucher">
+        SELECT
+            v.`id`, v.`shop_id`, v.`title`, v.`sub_title`, v.`rules`, v.`pay_value`,
+            v.`actual_value`, v.`type`, s.`name`
+        FROM tb_voucher v
+                 LEFT JOIN  tb_shop s ON v.shop_id = s.id
+        WHERE s.name = #{shopName}
+    </select>
 </mapper>

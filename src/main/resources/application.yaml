@@ -49,3 +49,25 @@ mybatis-plus:
 logging:
   level:
     com.blog: debug
+
+langchain4j:
+  open-ai:
+    chat-model:
+      api-key: ESHINGFBOIJIHHU2485
+      model-name: qwen-plus
+      log-requests: true
+      log-responses: true
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    streaming-chat-model:
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api-key: ESHINGFBOIJIHHU2485
+      model-name: qwen-plus
+      log-requests: true
+      log-responses: true
+    embedding-model:
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api-key: ESHINGFBOIJIHHU2485
+      model-name: text-embedding-v3
+      log-requests: true
+      log-responses: true
+      max-segments-per-batch: 10

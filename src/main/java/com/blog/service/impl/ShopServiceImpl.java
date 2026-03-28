@@ -194,4 +194,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         return Result.ok();
     }
 
+    @Override
+    public Shop findShop(String shopName) {
+        return this.baseMapper.findShop(shopName);
+    }
+
 }

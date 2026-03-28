@@ -11,6 +11,7 @@ import com.blog.utils.CacheClient;
 import com.blog.utils.RedisConstants;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,8 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
      */
     @Resource(name = "voucherLocalCache")
     private Cache<String, String> voucherLocalCache;
+    @Autowired
+    private VoucherMapper voucherMapper;
 
     /**
      * 查询店铺的优惠券列表（二级缓存：L1 Caffeine → L2 Redis → DB）
@@ -75,10 +78,20 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
         return Result.ok(voucher);
     }
 
+    @Override
+    public List<Voucher> findVoucherByShopName(String shopName) {
+        return voucherMapper.findVoucherByShopName(shopName);
+    }
+
+    @Override
+    public List<Voucher> findVoucherByUserPhone(String userPhone) {
+        return List.of();
+    }
+
 
     /**
      * 新增秒杀优惠券：写 DB → 写 Redis 秒杀库存 key
-     * 缓存一致性完全依赖 Caffeine/Redis 的 TTL 自动过期，无需主动失效。
+     * 缓存一致性完全依赖 Caffeine 的 TTL 自动过期，无需主动失效。
      */
     @Override
     @Transactional

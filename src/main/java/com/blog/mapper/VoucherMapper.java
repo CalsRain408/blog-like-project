@@ -13,4 +13,6 @@ public interface VoucherMapper extends BaseMapper<Voucher> {
     List<Voucher> queryVoucherOfShop(@Param("shopId") Long shopId);
 
     Voucher queryVoucherById(@Param("voucherId") Long voucherId);
+
+    List<Voucher> findVoucherByShopName(String shopName);
 }
